@@ -7,7 +7,7 @@ import (
 var (
 	AppVersion               = "v5.5.0"
 	AppPort                  = "3000"
-	AppDebug                 = false
+	AppDebug                 = true
 	AppOs                    = "AldinoKemal"
 	AppPlatform              = waCompanionReg.DeviceProps_PlatformType(1)
 	AppBasicAuthCredential   []string

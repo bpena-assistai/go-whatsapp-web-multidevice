@@ -72,6 +72,8 @@ func initDatabase(dbLog waLog.Logger) (*sqlstore.Container, error) {
 		return sqlstore.New("sqlite3", config.DBURI, dbLog)
 	} else if strings.HasPrefix(config.DBURI, "postgres:") {
 		return sqlstore.New("postgres", config.DBURI, dbLog)
+	} else if strings.HasPrefix(config.DBURI, "postgresql:") {
+		return sqlstore.New("postgres", config.DBURI, dbLog)
 	}
 
 	return nil, fmt.Errorf("unknown database type: %s. Currently only sqlite3(file:) and postgres are supported", config.DBURI)
@@ -100,6 +102,35 @@ func InitWaCLI(storeContainer *sqlstore.Container) *whatsmeow.Client {
 	cli.EnableAutoReconnect = true
 	cli.AutoTrustIdentity = true
 	cli.AddEventHandler(handler)
+
+	return cli
+}
+
+// InitWaCLI initializes the WhatsApp client
+func InitWaCLI2(storeContainer *sqlstore.Container) *whatsmeow.Client {
+	devices, err := storeContainer.GetAllDevices()
+	if err != nil {
+		log.Errorf("Failed to get device: %v", err)
+		panic(err)
+	}
+
+	if devices == nil {
+		log.Errorf("No device found")
+		panic("No device found")
+	}
+
+	// Configure device properties
+	osName := fmt.Sprintf("%s %s", config.AppOs, config.AppVersion)
+	store.DeviceProps.PlatformType = &config.AppPlatform
+	store.DeviceProps.Os = &osName
+
+	// Create and configure the clients
+	for _, device := range devices {
+		cli = whatsmeow.NewClient(device, waLog.Stdout(device.ID.User, config.WhatsappLogLevel, true))
+		cli.EnableAutoReconnect = true
+		cli.AutoTrustIdentity = true
+		cli.AddEventHandler(handler)
+	}
 
 	return cli
 }
